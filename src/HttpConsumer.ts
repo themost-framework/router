@@ -1,5 +1,5 @@
 // MOST Web Framework Codename ZeroGravity, copyright 2017-2020 THEMOST LP all rights reserved
-import {HttpContextBase} from './HttpContext';
+import {HttpContextBase} from './HttpApplicationBase';
 
 export class HttpConsumer {
     constructor(public callable: (this: HttpContextBase,...args: any[]) => Promise<any>) {

@@ -15,6 +15,7 @@
         "dom"
       ],
       "paths": {
+        "@themost/router": [ "src/index" ]
       }
     },
     "exclude": [

@@ -12,9 +12,9 @@
   "license": "BSD-3-Clause",
   "peerDependencies": {
     "@themost/common": "^2",
-    "@themost/xml": "^2",
     "@themost/data": "^2",
     "@themost/query": "^2",
+    "@themost/xml": "^2",
     "express": "^4.18.2"
   },
   "dependencies": {
@@ -28,6 +28,7 @@
     "@types/jasmine": "^4.3.2",
     "@types/lodash": "^4.14.195",
     "@types/node": "^17.0.23",
+    "@types/supertest": "^2.0.12",
     "dotenv": "^8.2.0",
     "eslint": "^8.42.0",
     "jasmine": "^5.0.0",

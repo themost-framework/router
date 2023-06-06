@@ -3,14 +3,7 @@ import { ApplicationBase, ConfigurationBase } from '@themost/common';
 import { DefaultDataContext } from '@themost/data';
 import { enumerable } from './decorators';
 import { IncomingMessage, ServerResponse } from 'http';
-
-export declare interface HttpContextBase {
-
-    request: IncomingMessage;
-    response: ServerResponse;
-    readonly application: ApplicationBase;
-
-}
+import { HttpContextBase } from './HttpApplicationBase';
 
 export class HttpContext extends DefaultDataContext implements HttpContextBase {
     request: IncomingMessage;
