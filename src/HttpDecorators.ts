@@ -54,6 +54,7 @@ declare interface HttpParamAttributeOptions {
     maxLength?: number;
     required?: boolean;
     message?: string;
+    fromBody?: boolean;
 }
 
 function httpMethod(method: HttpControllerMethodDeclaration,

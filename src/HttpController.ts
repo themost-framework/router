@@ -1,4 +1,4 @@
-import { HttpContext } from './HttpContext'
+import { HttpContextBase } from './Interfaces'
 import { HttpJsonResult } from './HttpJsonResult';
 import { HttpXmlResult } from './HttpXmlResult';
 import { HttpContentResult } from './HttpContentResult';
@@ -6,7 +6,7 @@ import { HttpRedirectResult } from './HttpRedirectResult';
 
 // MOST Web Framework Codename ZeroGravity, copyright 2017-2020 THEMOST LP all rights reserved
 class HttpController {
-    public context: HttpContext;
+    public context: HttpContextBase;
     [k: string]: any;
     constructor() {
         //

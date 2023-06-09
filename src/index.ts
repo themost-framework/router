@@ -3,7 +3,7 @@ export * from './HttpRoute';
 export * from './RouterService';
 export * from './HttpConsumer';
 export * from './HttpController';
-export * from './HttpApplicationBase';
+export * from './Interfaces';
 export * from './HttpContext';
 export * from './HttpDecorators';
 export * from './HttpResult';

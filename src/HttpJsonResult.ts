@@ -1,5 +1,5 @@
 import { HttpResult } from './HttpResult';
-import { HttpContextBase } from './HttpContext';
+import { HttpContextBase } from './Interfaces';
 
 export class HttpJsonResult extends HttpResult {
     execute(context: HttpContextBase): Promise<any> {

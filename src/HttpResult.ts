@@ -1,5 +1,5 @@
 // MOST Web Framework Codename ZeroGravity, copyright 2017-2020 THEMOST LP all rights reserved
-import {HttpContextBase} from './HttpApplicationBase';
+import { HttpContextBase } from './Interfaces';
 export abstract class HttpResult {
 
     public contentType: string = 'text/html';

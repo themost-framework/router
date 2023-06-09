@@ -3,12 +3,11 @@ import { ApplicationBase, ConfigurationBase } from '@themost/common';
 import { DefaultDataContext } from '@themost/data';
 import { enumerable } from './decorators';
 import { IncomingMessage, ServerResponse } from 'http';
-import { HttpContextBase } from './HttpApplicationBase';
+import { HttpContextBase } from './Interfaces';
 
 export class HttpContext extends DefaultDataContext implements HttpContextBase {
     request: IncomingMessage;
     response: ServerResponse;
-    private _locale: string;
     private _application: ApplicationBase;
     
     constructor(application: ApplicationBase) {

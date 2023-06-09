@@ -7,13 +7,13 @@ import {capitalize} from 'lodash';
 import { ApplicationBase, LangUtils } from '@themost/common';
 import { RouterService } from './RouterService';
 import { HttpRoute } from './HttpRoute'; 
-import { HttpContext } from './HttpContext';
+import { HttpContextBase } from './Interfaces';
 
 
 declare global {
     namespace Express {
         interface Request {
-            context: HttpContext;
+            context: HttpContextBase;
         }
     }
 }
