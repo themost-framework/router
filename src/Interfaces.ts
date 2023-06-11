@@ -24,8 +24,8 @@ export declare interface HttpApplicationBase extends ApplicationBase {
 
 export declare interface HttpContextBase extends DataContextBase {
 
-    request: IncomingMessage;
-    response: ServerResponse;
+    readonly request: IncomingMessage;
+    readonly response: ServerResponse;
     readonly application: HttpApplicationBase;
     
 }

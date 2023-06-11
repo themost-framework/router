@@ -6,11 +6,11 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { HttpContextBase } from './Interfaces';
 
 export class HttpContext extends DefaultDataContext implements HttpContextBase {
-    request: IncomingMessage;
-    response: ServerResponse;
-    private _application: ApplicationBase;
+    protected _application: ApplicationBase;
+    protected _req: IncomingMessage;
+    protected _res: ServerResponse;
     
-    constructor(application: ApplicationBase) {
+    constructor(application: ApplicationBase, req?: IncomingMessage, res?: ServerResponse) {
         // call super constructor
         super();
         // set application
@@ -20,6 +20,28 @@ export class HttpContext extends DefaultDataContext implements HttpContextBase {
             writable: false,
             value: application
         });
+
+        Object.defineProperty(this, '_req', {
+            configurable: true,
+            enumerable: false,
+            get: () => req
+        });
+
+        Object.defineProperty(this, '_res', {
+            configurable: true,
+            enumerable: false,
+            get: () => res
+        });
+    }
+
+    @enumerable(false)
+    get request(): IncomingMessage {
+        return this._req;
+    }
+
+    @enumerable(false)
+    get response(): ServerResponse {
+        return this._res;
     }
 
     @enumerable(false)

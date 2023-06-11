@@ -2,6 +2,10 @@
 import {HttpApplicationBase, RouterService} from '@themost/router';
 import { getApplication } from '@themost/test';
 
+class UserController {
+
+}
+
 describe('RouterService', () => {
 
     it('should create instance', () => {
@@ -49,6 +53,52 @@ describe('RouterService', () => {
         const route = service.parseUrl('/users/me');
         expect(route).toBeTruthy();
         expect(route.params.action).toBe('me');
+    });
+
+    it('should use child route', () => {
+        const container = getApplication();
+        const app: HttpApplicationBase = container.get('ExpressDataApplication');
+        app.useService(RouterService);
+        const service = app.getService(RouterService);
+        service.add({
+            path: 'users',
+            controller: UserController,
+            children: [
+                {
+                    path: 'index',
+                    redirectTo: 'me'
+                },
+                {
+                    path: ':action'
+                }
+            ]
+        });
+        const route = service.parseUrl('/users/me');
+        expect(route).toBeTruthy();
+        expect(route.params.action).toEqual('me');
+    });
+
+    it('should use redirect', () => {
+        const container = getApplication();
+        const app: HttpApplicationBase = container.get('ExpressDataApplication');
+        app.useService(RouterService);
+        const service = app.getService(RouterService);
+        service.add({
+            path: 'users',
+            controller: UserController,
+            children: [
+                {
+                    path: '',
+                    redirectTo: 'me'
+                },
+                {
+                    path: ':action'
+                }
+            ]
+        });
+        const route = service.parseUrl('/users');
+        expect(route).toBeTruthy();
+        expect(route.params.action).toEqual('me');
     });
 
 });

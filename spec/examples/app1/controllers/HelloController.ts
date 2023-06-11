@@ -1,4 +1,4 @@
-import { HttpController, httpController, httpGet } from '@themost/router';
+import { HttpController, httpController, httpGet, httpPost } from '@themost/router';
 
 @httpController('hello')
 export class HelloController extends HttpController {
@@ -7,7 +7,16 @@ export class HelloController extends HttpController {
     }
     
     @httpGet({
-        name: 'index',
+        name: 'index'
+    })
+    index() {
+        return this.json({
+            message: 'Hello World!'
+        });
+    }
+
+    @httpPost({
+        name: 'reply',
         params: [
             {
                 name: 'message',
@@ -15,7 +24,9 @@ export class HelloController extends HttpController {
             }
         ]
     })
-    index(message: string) {
-        return this.content('Hello World');
+    reply(message: string) {
+        return this.json({
+            reply: message
+        });
     }
 }

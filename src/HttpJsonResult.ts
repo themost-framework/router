@@ -2,7 +2,7 @@ import { HttpResult } from './HttpResult';
 import { HttpContextBase } from './Interfaces';
 
 export class HttpJsonResult extends HttpResult {
-    execute(context: HttpContextBase): Promise<any> {
+    async execute(context: HttpContextBase): Promise<any> {
         if (this.data == null) {
             context.response.writeHead(this.status || 204);
             return;
@@ -14,7 +14,7 @@ export class HttpJsonResult extends HttpResult {
     }
     constructor(public data: any) {
         super();
-        this.contentType = 'utf8';
-        this.contentEncoding = 'application/json';
+        this.contentType = 'application/json';
+        this.contentEncoding = 'utf8';
     }
 };

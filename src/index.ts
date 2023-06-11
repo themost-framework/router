@@ -12,4 +12,6 @@ export * from './HttpRedirectResult';
 export * from './HttpNextResult';
 export * from './HttpJsonResult'
 export * from './HttpXmlResult';
+export * from './HttpApplication';
 export * from './controllerRouter';
+

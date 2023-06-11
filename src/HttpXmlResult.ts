@@ -3,7 +3,7 @@ import { HttpContextBase } from './Interfaces';
 import { XSerializer } from '@themost/xml';
 
 export class HttpXmlResult extends HttpResult {
-    execute(context: HttpContextBase): Promise<any> {
+    async execute(context: HttpContextBase): Promise<any> {
         if (this.data == null) {
             context.response.writeHead(this.status || 204);
             return;

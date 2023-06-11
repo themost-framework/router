@@ -36,6 +36,9 @@ export declare interface HttpRouteConfig {
     index?: number;
     controller?: any;
     action?: string;
+    redirectTo?: string;
+    children?: HttpRouteConfig[]
+    [k:string]: any;
 }
 
 export const HTTP_ROUTE_PARSERS: Map<string, any> = new Map([
@@ -60,6 +63,13 @@ export const HTTP_ROUTE_PARSERS: Map<string, any> = new Map([
 
 ]);
 
+function resolveRootRelative(url: string) {
+    if (url.startsWith('/')) {
+        return url;
+    }
+    return '/' + url;
+}
+
 export class HttpRoute {
 
     public params: any = {};
@@ -75,7 +85,7 @@ export class HttpRoute {
             return false;
         if (urlToMatch.length === 0)
             return false;
-        let str1 = urlToMatch
+        let str1 = urlToMatch;
         let patternMatch;
         let parser;
         const k = urlToMatch.indexOf('?');
@@ -117,7 +127,8 @@ export class HttpRoute {
         }
         let str;
         let matcher;
-        str = this.routeConfig.path.replace(re, '([\\$_\\-.:\',+=%0-9\\w-]+)');
+        const routePath = resolveRootRelative(this.routeConfig.path);
+        str = routePath.replace(re, '([\\$_\\-.:\',+=%0-9\\w-]+)');
         matcher = new RegExp('^' + str + '$', 'ig');
         match = matcher.exec(str1);
         if (typeof match === 'undefined' || match === null) {
