@@ -1,10 +1,12 @@
 import * as express from 'express';
-import {controllerRouter, HttpApplication, HttpRoute, HttpRouteConfig, RouterService} from '@themost/router';
+import {controllerRouter, HttpApplication, HttpRoute, HttpRouteConfig, RouterService, xml} from '@themost/router';
 import { HelloController } from './controllers/HelloController';
 
 const app = express();
 
 app.use(express.json());
+
+app.use(xml())
 
 const service = new HttpApplication();
 

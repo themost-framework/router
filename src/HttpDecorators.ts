@@ -1,5 +1,5 @@
 // MOST Web Framework Codename ZeroGravity, copyright 2017-2020 THEMOST LP all rights reserved
-import {TraceUtils, LangUtils, HttpBadRequestError, HttpUnauthorizedError, Args} from '@themost/common';
+import {TraceUtils, LangUtils, HttpBadRequestError, HttpUnauthorizedError, Args, Types} from '@themost/common';
 import {HttpConsumer} from './HttpConsumer';
 import {DataTypeValidator, MinLengthValidator, MaxLengthValidator,
 MinValueValidator, MaxValueValidator, RequiredValidator, PatternValidator} from '@themost/data';
@@ -30,6 +30,8 @@ function httpController(name: string): ClassDecorator {
     }
 }
 
+declare type AnyConstructor<T> = Function & { prototype: T };
+
 declare interface HttpControllerMethodDeclaration {
     httpGet?: boolean;
     httpPost?: boolean;
@@ -40,13 +42,9 @@ declare interface HttpControllerMethodDeclaration {
     httpOptions?: boolean;
 }
 
-declare interface HttpControllerMethodAnnotation extends HttpControllerMethodDeclaration, Function {
-
-}
-
 declare interface HttpParamAttributeOptions {
     name: string;
-    type?: string;
+    type?: Types | AnyConstructor<any>;
     pattern?: RegExp|string;
     minValue?: any;
     maxValue?: any;
@@ -55,6 +53,14 @@ declare interface HttpParamAttributeOptions {
     required?: boolean;
     message?: string;
     fromBody?: boolean;
+    fromQuery?: boolean;
+}
+
+declare interface HttpControllerMethodAnnotation extends HttpControllerMethodDeclaration, Function {
+    httpAction?: string;
+    httpParams?: {
+        [k: string]: HttpParamAttributeOptions
+    }
 }
 
 function httpMethod(method: HttpControllerMethodDeclaration,
@@ -66,7 +72,7 @@ function httpMethod(method: HttpControllerMethodDeclaration,
                 httpAction(extras.name)(target, key, descriptor);
                 if (Array.isArray(extras.params)) {
                     for (const param of extras.params) {
-                        httpParam(param)
+                        httpParam(param)(target, key, descriptor);
                     }
                 }
             }
@@ -322,12 +328,7 @@ function httpAuthorize(value?: boolean) {
     };
 }
 
-/**
- * @param {string} name
- * @param {Function|HttpConsumer} consumer
- * @returns {Function}
- */
-function httpActionConsumer(name: string, consumer: any) {
+function httpActionConsumer(name: string, consumer: HttpConsumer | any) {
     return (target: any, key: any, descriptor: any) => {
         if (typeof descriptor.value !== 'function') {
             throw new Error('Decorator is not valid on this declaration type.');
@@ -403,6 +404,8 @@ function httpRoute(url: string, index?: number) {
 
 export {
     DecoratorError,
+    AnyConstructor,
+    HttpParamAttributeOptions,
     HttpControllerAnnotation,
     HttpControllerMethodAnnotation,
     httpGet,

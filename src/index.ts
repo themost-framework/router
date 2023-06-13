@@ -14,4 +14,5 @@ export * from './HttpJsonResult'
 export * from './HttpXmlResult';
 export * from './HttpApplication';
 export * from './controllerRouter';
+export * from './xml';
 

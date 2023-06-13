@@ -83,7 +83,7 @@ describe('RouterService', () => {
         const app: HttpApplicationBase = container.get('ExpressDataApplication');
         app.useService(RouterService);
         const service = app.getService(RouterService);
-        service.add({
+        service.addRange({
             path: 'users',
             controller: UserController,
             children: [
@@ -95,10 +95,18 @@ describe('RouterService', () => {
                     path: ':action'
                 }
             ]
+        }, {
+            path: 'home/me',
+            redirectTo: '/users/me'
         });
-        const route = service.parseUrl('/users');
+        let route = service.parseUrl('/users');
         expect(route).toBeTruthy();
         expect(route.params.action).toEqual('me');
+
+        route = service.parseUrl('/home/me');
+        expect(route).toBeTruthy();
+        expect(route.params.action).toEqual('me');
+        expect(route.routeConfig.controller).toEqual(UserController);
     });
 
 });

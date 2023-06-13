@@ -1,6 +1,7 @@
 // MOST Web Framework Codename ZeroGravity, copyright 2017-2020 THEMOST LP all rights reserved
-import { ApplicationService, ApplicationBase, PathUtils } from '@themost/common';
+import { ApplicationService, ApplicationBase } from '@themost/common';
 import {HttpRoute, HttpRouteConfig} from './HttpRoute';
+import { resolve, join } from 'path';
 
 class RouterService extends ApplicationService {
     public readonly routes: HttpRouteConfig[] = [];
@@ -26,7 +27,7 @@ class RouterService extends ApplicationService {
         return this;
     }
 
-    private _parseChildren(current: HttpRouteConfig, url: string): HttpRoute {
+    private _tryParseChildren(current: HttpRouteConfig, url: string): HttpRoute {
         const children = current.children;
         if (Array.isArray(children)) {
             const route = new HttpRoute();
@@ -39,7 +40,7 @@ class RouterService extends ApplicationService {
                 }, {
                     ...child
                 }, {
-                    path: PathUtils.join(current.path, child.path),
+                    path: join(current.path, child.path),
                     parent: current
                 });
                 let isMatch = route.isMatch(url);
@@ -47,7 +48,7 @@ class RouterService extends ApplicationService {
                     return route;
                 }
                 if (Array.isArray(child.children)) {
-                    const found = this._parseChildren(child, url);
+                    const found = this._tryParseChildren(child, url);
                     if (found) {
                         return found;
                     }
@@ -57,7 +58,18 @@ class RouterService extends ApplicationService {
         return;
     }
 
-    parseUrl(url: string, startIndex: number = 0): HttpRoute {
+    private _tryParseRedirect(route: HttpRoute, url: string): HttpRoute | undefined {
+        if (route == null) {
+            return;
+        }
+        if (route.routeConfig.redirectTo != null) {
+            const redirectTo = resolve(url, route.routeConfig.redirectTo);
+            return this.parseUrl(redirectTo);
+        }
+        return route;
+    }
+    
+    parseUrl(url: string, startIndex: number = 0): HttpRoute | undefined {
         const route = new HttpRoute();
         // tslint:disable-next-line:prefer-for-of
         for(let i = startIndex; i < this.routes.length; i++) {
@@ -67,24 +79,18 @@ class RouterService extends ApplicationService {
             // if route is match
             if (route.isMatch(url)) {
                 if (Array.isArray(current.children) && current.children.length > 0) {
-                    const child = this._parseChildren(current, url);
+                    const child = this._tryParseChildren(current, url);
                     if (child) {
-                        if (child.routeConfig.redirectTo != null) {
-                            return this.parseUrl(PathUtils.join(url, child.routeConfig.redirectTo));
-                        }
-                        return child;
+                        return this._tryParseRedirect(child, url);
                     }
                 } else {
-                    return route;
+                    return this._tryParseRedirect(route, url);
                 }
             }
             if (Array.isArray(current.children)) {
-                const found = this._parseChildren(current, url);
+                const found = this._tryParseChildren(current, url);
                 if (found) {
-                    if (found.routeConfig.redirectTo != null) {
-                        return this.parseUrl(PathUtils.join(url, found.routeConfig.redirectTo));
-                    }
-                    return found;
+                    return this._tryParseRedirect(found, url);
                 }
             }
         }

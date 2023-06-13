@@ -1,5 +1,9 @@
 import { HttpController, httpController, httpGet, httpPost } from '@themost/router';
 
+class ClientMessage {
+    message: string
+}
+
 @httpController('hello')
 export class HelloController extends HttpController {
     constructor() {
@@ -20,6 +24,7 @@ export class HelloController extends HttpController {
         params: [
             {
                 name: 'message',
+                type: 'Text',
                 maxLength: 512
             }
         ]
@@ -27,6 +32,22 @@ export class HelloController extends HttpController {
     reply(message: string) {
         return this.json({
             reply: message
+        });
+    }
+
+    @httpPost({
+        name: 'replyWithMessage',
+        params: [
+            {
+                name: 'replyMessage',
+                type: ClientMessage,
+                fromBody: true
+            }
+        ]
+    })
+    replyWithMessage(replyMessage: ClientMessage) {
+        return this.json({
+            reply: replyMessage.message
         });
     }
 }

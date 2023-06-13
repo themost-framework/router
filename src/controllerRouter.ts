@@ -2,7 +2,7 @@ import {Handler, Router} from 'express';
 import { HttpController } from './HttpController';
 import { HttpResult } from './HttpResult';
 import { HttpNextResult } from './HttpNextResult';
-import { HttpControllerMethodAnnotation } from './HttpDecorators';
+import { HttpControllerMethodAnnotation, HttpParamAttributeOptions } from './HttpDecorators';
 import {capitalize} from 'lodash';
 import { ApplicationBase, LangUtils } from '@themost/common';
 import { RouterService } from './RouterService';
@@ -97,17 +97,57 @@ function controllerRouter(app?: ApplicationBase): Router {
                     // parse method arguments
                     const methodParams = LangUtils.getFunctionParams(controllerMethod);
                     methodParams.forEach((methodParam: string) => {
-                        if (Object.prototype.hasOwnProperty.call(route.params, methodParam)) {
-                            args.push(route.params[methodParam]);
-                        } else if (Object.prototype.hasOwnProperty.call(req.body, methodParam)) {
-                            args.push(req.body[methodParam]);
-                        } else {
-                            args.push(undefined);
+                        // get http param
+                        let httpParam: HttpParamAttributeOptions | undefined;
+                        if (annotation.httpParams && Object.prototype.hasOwnProperty.call(annotation.httpParams, methodParam)) {
+                            httpParam = annotation.httpParams[methodParam];
                         }
+                        if (httpParam == null) {
+                            // set default param for further processing
+                            httpParam = {
+                                name: methodParam,
+                                fromBody: false,
+                                fromQuery: false
+                            }
+                        }
+                        // stage #1 get parameter from Request.body
+                        if (httpParam && httpParam.fromBody) {
+                            // set param from request body
+                            args.push(req.body);
+                            // exit
+                            return;
+                        }
+                        // stage #2 get parameter from Request.query
+                        if (httpParam && httpParam.fromQuery) {
+                            // set param from request query
+                            if (Object.prototype.hasOwnProperty.call(req.query, httpParam.name)) {
+                                args.push(req.query[httpParam.name]);
+                            } else {
+                                args.push(undefined);
+                            }
+                            return;
+                        }
+                        // stage #3 get parameter from Request.route
+                        if (Object.prototype.hasOwnProperty.call(route.params, httpParam.name)) {
+                            // set param from route
+                            args.push(route.params[httpParam.name]);
+                            // and exit
+                            return;
+                        }
+                        // stage #4 get parameter from Request.body[property]
+                        const body = req.body;
+                        if (Object.prototype.hasOwnProperty.call(body, httpParam.name)) {
+                            // set param from route
+                            args.push(body[httpParam.name]);
+                            // and exit
+                            return;
+                        }
+                        args.push(undefined);
+
                     });
                     const result = controllerMethod.apply(controller, args);
                     if (result instanceof HttpNextResult) {
-                        return next;
+                        return next();
                     }
                     if (result instanceof HttpResult) {
                         return result.execute(controller.context).then(() => {
