@@ -24,11 +24,11 @@ export class HttpContentResult extends HttpResult {
 
     async execute(context: HttpContextBase): Promise<any> {
         if (this.content == null) {
-            context.response.writeHead(this.status || 204);
+            context.response.writeHead(this.statusCode || 204);
             return;
         }
         // write content-type
-        context.response.writeHead(this.status || 200, { 'Content-Type': this.contentType });
+        context.response.writeHead(this.statusCode || 200, { 'Content-Type': this.contentType });
         if (this.contentEncoding === 'binary') {
             return await new Promise<void>((resolve, reject) => {
                 const source = bufferToStream(this.content);

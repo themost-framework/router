@@ -3,6 +3,8 @@ import { HttpJsonResult } from './HttpJsonResult';
 import { HttpXmlResult } from './HttpXmlResult';
 import { HttpContentResult } from './HttpContentResult';
 import { HttpRedirectResult } from './HttpRedirectResult';
+import { HttpViewResult } from './HttpViewResult';
+import { HttpControllerAnnotation } from './HttpDecorators';
 
 // MOST Web Framework Codename ZeroGravity, copyright 2017-2020 THEMOST LP all rights reserved
 class HttpController {
@@ -26,6 +28,10 @@ class HttpController {
 
     redirect(url: string) {
         return new HttpRedirectResult(url);
+    }
+
+    view(data: any) {
+        return new HttpViewResult(data);
     }
 
 }

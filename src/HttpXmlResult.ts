@@ -5,11 +5,11 @@ import { XSerializer } from '@themost/xml';
 export class HttpXmlResult extends HttpResult {
     async execute(context: HttpContextBase): Promise<any> {
         if (this.data == null) {
-            context.response.writeHead(this.status || 204);
+            context.response.writeHead(this.statusCode || 204);
             return;
         }
         // write content-type
-        context.response.writeHead(this.status || 200, { 'Content-Type': this.contentType });
+        context.response.writeHead(this.statusCode || 200, { 'Content-Type': this.contentType });
         // send response
         context.response.write(XSerializer.serialize(this.data), this.contentEncoding as BufferEncoding);
     }

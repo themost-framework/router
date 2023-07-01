@@ -4,8 +4,13 @@ export abstract class HttpResult {
 
     public contentType: string = 'text/html';
     public contentEncoding: string = 'utf8';
-    public status: number;
+    public statusCode: number;
 
     abstract execute(context: HttpContextBase): Promise<any>;
+
+    status(status: number): this {
+        this.statusCode = status;
+        return this;
+    }
 
 }

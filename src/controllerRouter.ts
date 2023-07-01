@@ -16,6 +16,7 @@ declare global {
     namespace Express {
         interface Request {
             context: HttpContextBase;
+            activatedRoute?: HttpRoute
         }
     }
 }
@@ -81,6 +82,12 @@ function controllerRouter(app?: ApplicationBase): Router {
         const appRouter: RouterService = req.context.application.getService(RouterService);
         const route: HttpRoute = appRouter.parseUrl(req.url);
         if (route) {
+            // set activatedRoute
+            Object.defineProperty(req, 'activatedRoute', {
+                configurable: true,
+                enumerable: true,
+                get: () => route
+            });
             const ControllerCtor = route.routeConfig.controller as new() => HttpController;
             const controller = new ControllerCtor();
             controller.context = req.context;

@@ -7,10 +7,10 @@ export class HttpRedirectResult extends HttpResult {
     constructor(public url: string) {
         super();
         // set status
-        this.status = 302;
+        this.statusCode = 302;
     }
     async execute(context: HttpContextBase): Promise<void> {
         // set redirect location
-        context.response.writeHead(this.status, { 'Location': this.url });
+        context.response.writeHead(this.statusCode, { 'Location': this.url });
     }
 }
