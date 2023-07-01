@@ -24,6 +24,14 @@ spec
 # github
 .github
 
+# gitpod
+.gitpod.yml
+
+# typescript
+tsconfig.lib.json
+tsconfig.spec.json
+tsconfig.json
+
 # babel
 babel.config.js
 rollup.config.js
