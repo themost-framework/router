@@ -45,6 +45,20 @@ service.getService(RouterService).addRange(...routes)
 
 app.use(controllerRouter(service));
 
+app.use((err: any, req: any, res: any, next: any) => {
+    if (res.headersSent) {
+      return next(err)
+    }
+    // set locals, only providing error in development
+    res.locals = {
+      message: err.message,
+      error: req.app.get('env') === 'development' ? err : { }
+    };
+    // render the error page
+    res.status(err.status || err.statusCode || 500);
+    res.render('error');
+  });
+
 export {
     app
 }

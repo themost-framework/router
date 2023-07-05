@@ -2,7 +2,7 @@
 import {TraceUtils, LangUtils, HttpBadRequestError, HttpUnauthorizedError, Args, Types} from '@themost/common';
 import {HttpConsumer} from './HttpConsumer';
 import {DataTypeValidator, MinLengthValidator, MaxLengthValidator,
-MinValueValidator, MaxValueValidator, RequiredValidator, PatternValidator} from '@themost/data';
+MinValueValidator, MaxValueValidator, RequiredValidator, PatternValidator, DataContext} from '@themost/data';
 import {HttpRouteConfig} from './HttpRoute';
 
 class DecoratorError extends Error {
@@ -11,9 +11,6 @@ class DecoratorError extends Error {
     }
 }
 
-declare interface HttpControllerAnnotation extends Function {
-    httpController: { name: string };
-}
 
 function httpController(name: string): ClassDecorator {
     return (target: any) => {
@@ -56,20 +53,33 @@ declare interface HttpParamAttributeOptions {
     fromQuery?: boolean;
 }
 
-declare interface HttpControllerMethodAnnotation extends HttpControllerMethodDeclaration, Function {
+declare interface HttpControllerMethodAnnotation extends HttpControllerMethodDeclaration {
     httpAction?: string;
     httpParams?: {
         [k: string]: HttpParamAttributeOptions
     }
+    httpConsumers?: HttpConsumer[]
+}
+
+declare interface HttpControllerAnnotation extends Function {
+    httpController: { name: string };
+    httpMethods: Map<string, HttpControllerMethodAnnotation>
 }
 
 function httpMethod(method: HttpControllerMethodDeclaration,
     extras?: { name?: string, params?: HttpParamAttributeOptions[] }) {
     return (target: any, key: any, descriptor: any) => {
         if (typeof descriptor.value === 'function') {
-            Object.assign(descriptor.value, method);
+            // get name or method name
+            const name = (extras && extras.name) || key;
+            // use action decorator
+            httpAction(name)(target, key, descriptor);
+            // get controller annotation
+            const controllerAnnotation = target.constructor as HttpControllerAnnotation;
+            const methodAnnotation = controllerAnnotation.httpMethods.get(key);
+            Object.assign(methodAnnotation, method);
             if (extras) {
-                httpAction(extras.name)(target, key, descriptor);
+                // define http params
                 if (Array.isArray(extras.params)) {
                     for (const param of extras.params) {
                         httpParam(param)(target, key, descriptor);
@@ -88,22 +98,17 @@ function httpGet(extras?: { name?: string, params?: HttpParamAttributeOptions[] 
         httpHead: true
     }, extras);
 }
-/**
- * @returns {Function}
- */
+
 function httpAny(extras?: { name?: string, params?: HttpParamAttributeOptions[] }) {
-    return (target: any, key: any, descriptor: any) => {
-        if (typeof descriptor.value === 'function') {
-            descriptor.value.httpGet = true;
-            descriptor.value.httpPost = true;
-            descriptor.value.httpPut = true;
-            descriptor.value.httpDelete = true;
-            descriptor.value.httpOptions = true;
-            descriptor.value.httpHead = true;
-            descriptor.value.httPatch = true;
-        }
-        return descriptor;
-    }
+    return httpMethod({
+        httpGet: true,
+        httpOptions: true,
+        httpHead: true,
+        httpDelete: true,
+        httpPatch: true,
+        httpPost: true,
+        httpPut: true
+    }, extras);
 }
 
 function httpPost(extras?: { name?: string, params?: HttpParamAttributeOptions[] }) {
@@ -155,40 +160,138 @@ function httpAction(name: string) {
         throw new TypeError('Action name must be a string');
     }
     return (target: any, key: any, descriptor: any) => {
+        if (Object.prototype.hasOwnProperty.call(target.constructor, 'httpMethods') === false) {
+            Object.assign(target.constructor, {
+                httpMethods: new Map<string, HttpControllerMethodAnnotation>()
+            });
+        }
         if (typeof descriptor.value !== 'function') {
             throw new Error('Decorator is not valid on this declaration type.');
         }
-        descriptor.value.httpAction = name;
-        return descriptor;
-    }
-}
-/**
- *
- * @param {string} name
- * @param {string} alias
- * @returns {Function}
- */
-function httpParamAlias(name: string, alias: string) {
-    if (typeof name !== 'string') {
-        throw new TypeError('Parameter name must be a string');
-    }
-    if (typeof alias !== 'string') {
-        throw new TypeError('Parameter alias must be a string');
-    }
-    return (target: any, key: any, descriptor: any) => {
-        if (typeof descriptor.value !== 'function') {
-            throw new Error('Decorator is not valid on this declaration type.');
+        const controllerAnnotation = target.constructor as HttpControllerAnnotation;
+        if (controllerAnnotation.httpMethods == null) {
+            controllerAnnotation.httpMethods = new Map();
         }
-        descriptor.value.httpParamAlias = descriptor.value.httpParamAlias || { };
-        descriptor.value.httpParamAlias[name] = alias;
+        let methodAnnotation = controllerAnnotation.httpMethods.get(key);
+        if (methodAnnotation == null) {
+            controllerAnnotation.httpMethods.set(key, {
+                httpAction: name
+            });
+            methodAnnotation = controllerAnnotation.httpMethods.get(key);
+        } else {
+            methodAnnotation.httpAction = name
+        }
+        // assign param validation consumer
+        methodAnnotation.httpConsumers = methodAnnotation.httpConsumers || [];
+        const paramValidationConsumer = new HttpConsumer(async (context) => {
+            const httpParamValidationFailedCallback = (thisContext: any, thisParam: any, validationResult: any) => {
+                TraceUtils.error(JSON.stringify(Object.assign(validationResult, {
+                    param : thisParam,
+                    request : {
+                        url: thisContext.request.url,
+                        method: thisContext.request.method
+                    }
+                })));
+                return Promise.reject(new HttpBadRequestError('Bad request parameter', thisParam.message || validationResult.message));
+            };
+            const methodParams = LangUtils.getFunctionParams(descriptor.value);
+            const controllerAnnotation1 = target.constructor as HttpControllerAnnotation;
+            const methodAnnotation1 = controllerAnnotation1.httpMethods.get(key);
+            const httpParams = methodAnnotation1.httpParams;
+            if (methodParams.length>0) {
+                let k = 0
+                let httpParamItem;
+                let validator;
+                let validationResult;
+                let functionParam;
+                let contextParam;
+                while (k < methodParams.length) {
+                    functionParam = methodParams[k];
+                    if (httpParams) {
+                        httpParamItem = httpParams[functionParam];
+                        if (httpParamItem) {
+                            if (typeof httpParamItem.type === 'string') {
+                                // validate type
+                                validator = new DataTypeValidator(httpParamItem.type);
+                                validator.setContext(context as any);
+                                validationResult = validator.validateSync(contextParam);
+                                if (validationResult) {
+                                    return httpParamValidationFailedCallback(context, httpParamItem, validationResult);
+                                }
+                            }
+                            if (httpParamItem.pattern instanceof RegExp) {
+                                // validate pattern
+                                if (httpParamItem.pattern instanceof RegExp) {
+                                    validator = new PatternValidator(httpParamItem.pattern.source);
+                                } else {
+                                    validator = new PatternValidator(httpParamItem.pattern);
+                                }
+                                validator.setContext(context as any);
+                                validationResult = validator.validateSync(contextParam);
+                                if (validationResult) {
+                                    return httpParamValidationFailedCallback(context, httpParamItem, validationResult);
+                                }
+                            }
+                            if (typeof httpParamItem.minLength === 'number') {
+                                // validate min length
+                                validator = new MinLengthValidator(httpParamItem.minLength);
+                                validator.setContext(context as any);
+                                validationResult = validator.validateSync(contextParam);
+                                if (validationResult) {
+                                    return httpParamValidationFailedCallback(context, httpParamItem, validationResult);
+                                }
+                            }
+                            if (typeof httpParamItem.maxLength === 'number') {
+                                // validate max length
+                                validator = new MaxLengthValidator(httpParamItem.maxLength);
+                                validator.setContext(context as any);
+                                validationResult = validator.validateSync(contextParam);
+                                if (validationResult) {
+                                    return httpParamValidationFailedCallback(context, httpParamItem, validationResult);
+                                }
+                            }
+                            if (typeof httpParamItem.minValue !== 'undefined') {
+                                // validate min value
+                                validator = new MinValueValidator(httpParamItem.minValue);
+                                validator.setContext(context as any);
+                                validationResult = validator.validateSync(contextParam);
+                                if (validationResult) {
+                                    return httpParamValidationFailedCallback(context, httpParamItem, validationResult);
+                                }
+                            }
+                            if (typeof httpParamItem.maxValue !== 'undefined') {
+                                // validate max value
+                                validator = new MaxValueValidator(httpParamItem.required);
+                                validator.setContext(context as any);
+                                validationResult = validator.validateSync(contextParam);
+                                if (validationResult) {
+                                    return httpParamValidationFailedCallback(context, httpParamItem, validationResult);
+                                }
+                            }
+
+                            if ((typeof httpParamItem.required !== 'undefined') && (httpParamItem.required === true)) {
+                                // validate required value
+                                validator = new RequiredValidator();
+                                validator.setContext(context as any);
+                                validationResult = validator.validateSync(contextParam);
+                                if (validationResult) {
+                                    return httpParamValidationFailedCallback(context, httpParamItem, validationResult);
+                                }
+                            }
+                        }
+                    }
+                    k += 1;
+                }
+            }
+            return Promise.resolve();
+        });
+        if (methodAnnotation.httpConsumers.findIndex((consumer) => consumer === paramValidationConsumer) < 0) {
+            methodAnnotation.httpConsumers.push(paramValidationConsumer);
+        }
         return descriptor;
     }
 }
 
-/**
- * @param {HttpParamAttributeOptions|*=} options
- * @returns {Function}
- */
 function httpParam(options: HttpParamAttributeOptions) {
     if (typeof options !== 'object') { throw new TypeError('Parameter options must be an object'); }
     if (typeof options.name !== 'string') { throw new TypeError('Parameter name must be a string'); }
@@ -196,112 +299,29 @@ function httpParam(options: HttpParamAttributeOptions) {
         if (typeof descriptor.value !== 'function') {
             throw new Error('Decorator is not valid on this declaration type.');
         }
-
-        descriptor.value.httpParams = descriptor.value.httpParams || { };
-        descriptor.value.httpParams[options.name] = Object.assign({'type':'Text'}, options);
-        if (typeof descriptor.value.httpParam === 'undefined') {
-            descriptor.value.httpParam = new HttpConsumer( (context) => {
-                const httpParamValidationFailedCallback = (thisContext: any, thisParam: any, validationResult: any) => {
-                    TraceUtils.error(JSON.stringify(Object.assign(validationResult, {
-                        param : thisParam,
-                        request : {
-                            url: thisContext.request.url,
-                            method: thisContext.request.method
-                        }
-                    })));
-                    return Promise.reject(new HttpBadRequestError('Bad request parameter', thisParam.message || validationResult.message));
-                };
-                const methodParams = LangUtils.getFunctionParams(descriptor.value);
-                const httpParams = descriptor.value.httpParams;
-                if (methodParams.length>0) {
-                    let k = 0
-                    let httpParamItem;
-                    let validator;
-                    let validationResult;
-                    let functionParam;
-                    let contextParam;
-                    while (k < methodParams.length) {
-                        functionParam = methodParams[k];
-                        if (typeof context.getParam === 'function') {
-                            contextParam = context.getParam(functionParam);
-                        }
-                        else {
-                            contextParam = context.params[functionParam];
-                        }
-                        if (httpParams) {
-                            httpParamItem = httpParams[functionParam];
-                            if (httpParamItem) {
-                                if (typeof httpParamItem.type === 'string') {
-                                    // validate type
-                                    validator = new DataTypeValidator(httpParamItem.type);
-                                    validator.setContext(context);
-                                    validationResult = validator.validateSync(contextParam);
-                                    if (validationResult) {
-                                        return httpParamValidationFailedCallback(context, httpParamItem, validationResult);
-                                    }
-                                }
-                                if (httpParamItem.pattern instanceof RegExp) {
-                                    // validate pattern
-                                    validator = new PatternValidator(httpParamItem.pattern);
-                                    validator.setContext(context);
-                                    validationResult = validator.validateSync(contextParam);
-                                    if (validationResult) {
-                                        return httpParamValidationFailedCallback(context, httpParamItem, validationResult);
-                                    }
-                                }
-                                if (typeof httpParamItem.minLength === 'number') {
-                                    // validate min length
-                                    validator = new MinLengthValidator(httpParamItem.minLength);
-                                    validator.setContext(context);
-                                    validationResult = validator.validateSync(contextParam);
-                                    if (validationResult) {
-                                        return httpParamValidationFailedCallback(context, httpParamItem, validationResult);
-                                    }
-                                }
-                                if (typeof httpParamItem.maxLength === 'number') {
-                                    // validate max length
-                                    validator = new MaxLengthValidator(httpParamItem.maxLength);
-                                    validator.setContext(context);
-                                    validationResult = validator.validateSync(contextParam);
-                                    if (validationResult) {
-                                        return httpParamValidationFailedCallback(context, httpParamItem, validationResult);
-                                    }
-                                }
-                                if (typeof httpParamItem.minValue !== 'undefined') {
-                                    // validate min value
-                                    validator = new MinValueValidator(httpParamItem.minValue);
-                                    validator.setContext(context);
-                                    validationResult = validator.validateSync(contextParam);
-                                    if (validationResult) {
-                                        return httpParamValidationFailedCallback(context, httpParamItem, validationResult);
-                                    }
-                                }
-                                if (typeof httpParamItem.maxValue !== 'undefined') {
-                                    // validate max value
-                                    validator = new MaxValueValidator(httpParamItem.required);
-                                    validator.setContext(context);
-                                    validationResult = validator.validateSync(contextParam);
-                                    if (validationResult) {
-                                        return httpParamValidationFailedCallback(context, httpParamItem, validationResult);
-                                    }
-                                }
-
-                                if ((typeof httpParamItem.required !== 'undefined') && (httpParamItem.required === true)) {
-                                    // validate required value
-                                    validator = new RequiredValidator();
-                                    validator.setContext(context);
-                                    validationResult = validator.validateSync(contextParam);
-                                    if (validationResult) {
-                                        return httpParamValidationFailedCallback(context, httpParamItem, validationResult);
-                                    }
-                                }
-                            }
-                        }
-                        k += 1;
-                    }
-                }
-                return Promise.resolve();
-            });
+        // get controller annotation
+        const controllerAnnotation = target.constructor as HttpControllerAnnotation;
+        if (controllerAnnotation.httpMethods == null) {
+            controllerAnnotation.httpMethods = new Map();
+        }
+        let methodAnnotation: HttpControllerMethodAnnotation = controllerAnnotation.httpMethods.get(key);
+        if (methodAnnotation == null) {
+            const httpAction = key
+            const httpParams: {
+                [k: string]: HttpParamAttributeOptions
+            } = {};
+            httpParams[options.name] = Object.assign({
+                'type':'Text'
+            }, options);
+            methodAnnotation = {
+                httpAction,
+                httpParams
+            }
+        } else {
+            methodAnnotation.httpParams = methodAnnotation.httpParams || {};
+            methodAnnotation.httpParams[options.name] = Object.assign({
+                'type':'Text'
+            }, options);
         }
         return descriptor;
     }
@@ -312,30 +332,37 @@ function httpAuthorize(value?: boolean) {
         if (typeof descriptor.value !== 'function') {
             throw new Error('Decorator is not valid on this declaration type.');
         }
-        let authorize = true;
-        if (typeof value === 'boolean') {
-            authorize = value;
-        }
-        if (authorize) {
-            descriptor.value.authorize = new HttpConsumer( (context) => {
-                if (context.user && context.user.name !== 'anonymous') {
-                    return Promise.resolve();
-                }
-                return Promise.reject(new HttpUnauthorizedError());
-            });
-        }
+        httpActionConsumer(new HttpConsumer((context) => {
+            if (context.user && context.user.name !== 'anonymous') {
+                return Promise.resolve();
+            }
+            return Promise.reject(new HttpUnauthorizedError());
+        }))(target, key, descriptor);
         return descriptor;
     };
 }
 
-function httpActionConsumer(name: string, consumer: HttpConsumer | any) {
+function httpActionConsumer(consumer: HttpConsumer | any) {
     return (target: any, key: any, descriptor: any) => {
         if (typeof descriptor.value !== 'function') {
             throw new Error('Decorator is not valid on this declaration type.');
         }
+        const controllerAnnotation = target as HttpControllerAnnotation;
+        if (controllerAnnotation.httpMethods == null) {
+            controllerAnnotation.httpMethods = new Map();
+        }
+        let methodAnnotation = controllerAnnotation.httpMethods.get(key);
+        if (methodAnnotation == null) {
+            methodAnnotation = {
+                httpAction: key,
+                httpConsumers: []
+            }
+            controllerAnnotation.httpMethods.set(key, methodAnnotation);
+        }
+        methodAnnotation.httpConsumers = methodAnnotation.httpConsumers || [];
         if (consumer instanceof HttpConsumer) {
             // set consumer
-            descriptor.value[name] = consumer;
+            methodAnnotation.httpConsumers.push(consumer);
             // and exit
             return descriptor;
         }
@@ -343,7 +370,7 @@ function httpActionConsumer(name: string, consumer: HttpConsumer | any) {
         if (typeof consumer !== 'function') {
             throw new Error('Consumer may be a function.');
         }
-        descriptor.value[name] = new HttpConsumer(consumer);
+        methodAnnotation.httpConsumers.push(new HttpConsumer(consumer));
         return descriptor;
     };
 }
@@ -419,7 +446,6 @@ export {
     httpAction,
     httpRoute,
     httpController,
-    httpParamAlias,
     httpParam,
     httpAuthorize,
     httpActionConsumer

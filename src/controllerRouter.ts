@@ -2,7 +2,7 @@ import {Handler, Router} from 'express';
 import { HttpController } from './HttpController';
 import { HttpResult } from './HttpResult';
 import { HttpNextResult } from './HttpNextResult';
-import { HttpControllerMethodAnnotation, HttpParamAttributeOptions } from './HttpDecorators';
+import { HttpControllerMethodAnnotation, HttpParamAttributeOptions, HttpControllerAnnotation } from './HttpDecorators';
 import {capitalize} from 'lodash';
 import { ApplicationBase, LangUtils } from '@themost/common';
 import { RouterService } from './RouterService';
@@ -10,7 +10,7 @@ import { HttpRoute } from './HttpRoute';
 import { HttpContextBase } from './Interfaces';
 import { HttpContext } from './HttpContext';
 import { HttpApplication } from './HttpApplication';
-
+import '@themost/promise-sequence';
 
 declare global {
     namespace Express {
@@ -92,22 +92,34 @@ function controllerRouter(app?: ApplicationBase): Router {
             const controller = new ControllerCtor();
             controller.context = req.context;
             const action = route.params.action || route.routeConfig.action;
-            const controllerMethod: (...arg: any) => any = controller[action];
+            const controllerAnnotation = ControllerCtor as unknown as HttpControllerAnnotation;
+            let methodAnnotation: HttpControllerMethodAnnotation;
+            const methods = controllerAnnotation.httpMethods;
+            let controllerMethod: (...arg: any) => any
+            if (methods) {
+                for (let [key, value] of methods) {
+                    if (value.httpAction === action) {
+                        controllerMethod = controller[key];
+                        methodAnnotation = value;
+                        break;
+                    }
+                }
+            }
             if (typeof controllerMethod === 'function') {
                 // validate httpAction
                 const annotation = controllerMethod as HttpControllerMethodAnnotation;
                 // get full method name e.g. httpGet, httpPost, httpPut etc
                 const method = `http${capitalize(req.method)}`;
                 // if controller method has been annotated
-                if (Object.prototype.hasOwnProperty.call(annotation, method)) {
+                if (Object.prototype.hasOwnProperty.call(methodAnnotation, method)) {
                     const args: any[] = [];
                     // parse method arguments
                     const methodParams = LangUtils.getFunctionParams(controllerMethod);
                     methodParams.forEach((methodParam: string) => {
                         // get http param
                         let httpParam: HttpParamAttributeOptions | undefined;
-                        if (annotation.httpParams && Object.prototype.hasOwnProperty.call(annotation.httpParams, methodParam)) {
-                            httpParam = annotation.httpParams[methodParam];
+                        if (methodAnnotation.httpParams && Object.prototype.hasOwnProperty.call(methodAnnotation.httpParams, methodParam)) {
+                            httpParam = methodAnnotation.httpParams[methodParam];
                         }
                         if (httpParam == null) {
                             // set default param for further processing
@@ -152,19 +164,28 @@ function controllerRouter(app?: ApplicationBase): Router {
                         args.push(undefined);
 
                     });
-                    const result = controllerMethod.apply(controller, args);
-                    if (result instanceof HttpNextResult) {
-                        return next();
-                    }
-                    if (result instanceof HttpResult) {
-                        return result.execute(controller.context).then(() => {
-                            if (controller.context.response.writableEnded === false) {
-                                controller.context.response.end();
-                            }
-                        }).catch((err) => {
-                            return next(err);
-                        });
-                    }
+                    // execute action consumers
+                    const consumers = methodAnnotation.httpConsumers || [];
+                    const consumerSequence = consumers.map((consumer) => {
+                        return () => consumer.run(controller.context)
+                    });
+                    Promise.sequence(consumerSequence).then(() => {
+                        const result = controllerMethod.apply(controller, args);
+                        if (result instanceof HttpNextResult) {
+                            return next();
+                        }
+                        if (result instanceof HttpResult) {
+                            return result.execute(controller.context).then(() => {
+                                if (controller.context.response.writableEnded === false) {
+                                    controller.context.response.end();
+                                }
+                            }).catch((err) => {
+                                return next(err);
+                            });
+                        }
+                    }).catch((err) => {
+                        return next(err);
+                    });
                 }
             }
         }

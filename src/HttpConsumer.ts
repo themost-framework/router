@@ -2,7 +2,7 @@
 import { HttpContextBase } from "./Interfaces";
 
 export class HttpConsumer {
-    constructor(public callable: (this: HttpContextBase,...args: any[]) => Promise<any>) {
+    constructor(public callable: (context: HttpContextBase,...args: any[]) => Promise<any>) {
         //
     }
 
@@ -12,6 +12,7 @@ export class HttpConsumer {
      * @param {...*} args
      */
     run(context: HttpContextBase, ...args: any[]): Promise<any> {
-        return this.callable.apply(context, args);
+        const argumentsWithContext = [].concat(context, args);
+        return this.callable.apply(null, argumentsWithContext);
     }
 }
