@@ -4,6 +4,7 @@ import { HelloController } from './controllers/HelloController';
 import { ViewEngine } from '@themost/ejs';
 import * as path from 'path';
 import { IndexController } from './controllers/IndexController';
+import { TraceUtils } from '@themost/common';
 
 
 const app = express();
@@ -49,6 +50,7 @@ app.use((err: any, req: any, res: any, next: any) => {
     if (res.headersSent) {
       return next(err)
     }
+    TraceUtils.error(err);
     // set locals, only providing error in development
     res.locals = {
       message: err.message,

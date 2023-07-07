@@ -169,7 +169,7 @@ function controllerRouter(app?: ApplicationBase): Router {
                     const consumerSequence = consumers.map((consumer) => {
                         return () => consumer.run(controller.context)
                     });
-                    Promise.sequence(consumerSequence).then(() => {
+                    return Promise.sequence(consumerSequence).then(() => {
                         const result = controllerMethod.apply(controller, args);
                         if (result instanceof HttpNextResult) {
                             return next();

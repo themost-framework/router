@@ -1,5 +1,5 @@
 import {TestController} from './TestController';
-import {HttpControllerAnnotation, HttpControllerMethodAnnotation} from '@themost/router';
+import {HttpControllerAnnotation} from '@themost/router';
 
 describe('HttpController', () => {
     it('should has controller decorator', () => {
@@ -8,9 +8,10 @@ describe('HttpController', () => {
        expect(annotation.httpController).toBeTruthy()
     });
     it('should has controller method decorator', () => {
-        const controller  = new TestController();
-        const annotation = controller.hello as HttpControllerMethodAnnotation;
-        expect(annotation.httpGet).toBeTruthy();
+        const annotation = TestController as unknown as HttpControllerAnnotation;
+        const methodAnnotation = annotation.httpMethods.get('hello');
+        expect(methodAnnotation).toBeTruthy();
+        expect(methodAnnotation.httpGet).toBeTruthy();
     });
 });
 

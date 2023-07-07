@@ -4,6 +4,7 @@ import { RouterService } from './RouterService';
 import { HttpController } from './HttpController';
 import { HttpControllerAnnotation } from './HttpDecorators';
 import { resolve } from 'path';
+import { DataConfigurationStrategy } from '@themost/data';
 
 export class HttpApplication extends SequentialEventEmitter implements HttpApplicationBase {
     private readonly _configuration: ConfigurationBase;
@@ -16,6 +17,8 @@ export class HttpApplication extends SequentialEventEmitter implements HttpAppli
         // set configuration
         let _cwd = cwd || process.cwd();
         this._configuration = new ConfigurationBase(resolve(_cwd, 'config'));
+        // use data configuration strategy (for implenting validators)
+        this.configuration.useStrategy(DataConfigurationStrategy)
         // use router service
         this.useService(RouterService);
     }
