@@ -16,7 +16,12 @@ declare global {
     namespace Express {
         interface Request {
             context: HttpContextBase;
-            activatedRoute?: HttpRoute
+            activatedRoute?: HttpRoute;
+            activatedController?: {
+                controller: HttpControllerAnnotation,
+                method: HttpControllerMethodAnnotation,
+                args: any[]
+            }
         }
     }
 }
@@ -106,8 +111,6 @@ function controllerRouter(app?: ApplicationBase): Router {
                 }
             }
             if (typeof controllerMethod === 'function') {
-                // validate httpAction
-                const annotation = controllerMethod as HttpControllerMethodAnnotation;
                 // get full method name e.g. httpGet, httpPost, httpPut etc
                 const method = `http${capitalize(req.method)}`;
                 // if controller method has been annotated
@@ -164,6 +167,19 @@ function controllerRouter(app?: ApplicationBase): Router {
                         args.push(undefined);
 
                     });
+                    // set activated controller
+                    const activatedController = {
+                        controller: controllerAnnotation,
+                        method: methodAnnotation,
+                        args: args
+                    };
+
+                    Object.defineProperty(req, 'activatedController', {
+                        configurable: true,
+                        enumerable: true,
+                        get: () => activatedController
+                    });
+
                     // execute action consumers
                     const consumers = methodAnnotation.httpConsumers || [];
                     const consumerSequence = consumers.map((consumer) => {

@@ -4,11 +4,12 @@ import { DefaultDataContext } from '@themost/data';
 import { enumerable } from './decorators';
 import { IncomingMessage, ServerResponse } from 'http';
 import { HttpContextBase } from './Interfaces';
+import { Request, Response } from 'express';
 
 export class HttpContext extends DefaultDataContext implements HttpContextBase {
     protected _application: ApplicationBase;
-    protected _req: IncomingMessage;
-    protected _res: ServerResponse;
+    protected _req: Request;
+    protected _res: Response;
     
     constructor(application: ApplicationBase, req?: IncomingMessage, res?: ServerResponse) {
         // call super constructor
@@ -35,12 +36,12 @@ export class HttpContext extends DefaultDataContext implements HttpContextBase {
     }
 
     @enumerable(false)
-    get request(): IncomingMessage {
+    get request(): Request {
         return this._req;
     }
 
     @enumerable(false)
-    get response(): ServerResponse {
+    get response(): Response {
         return this._res;
     }
 

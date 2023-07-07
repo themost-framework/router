@@ -198,15 +198,18 @@ function httpAction(name: string) {
             const controllerAnnotation1 = target.constructor as HttpControllerAnnotation;
             const methodAnnotation1 = controllerAnnotation1.httpMethods.get(key);
             const httpParams = methodAnnotation1.httpParams;
+            // get activated controller
+            const activatedController = context.request.activatedController;
             if (methodParams.length>0) {
                 let k = 0
                 let httpParamItem;
                 let validator;
                 let validationResult;
                 let functionParam;
-                let contextParam;
+                let param;
                 while (k < methodParams.length) {
                     functionParam = methodParams[k];
+                    param = activatedController.args[k];
                     if (httpParams) {
                         httpParamItem = httpParams[functionParam];
                         if (httpParamItem) {
@@ -214,7 +217,7 @@ function httpAction(name: string) {
                                 // validate type
                                 validator = new DataTypeValidator(httpParamItem.type);
                                 validator.setContext(context as any);
-                                validationResult = validator.validateSync(contextParam);
+                                validationResult = validator.validateSync(param);
                                 if (validationResult) {
                                     return httpParamValidationFailedCallback(context, httpParamItem, validationResult);
                                 }
@@ -227,7 +230,7 @@ function httpAction(name: string) {
                                     validator = new PatternValidator(httpParamItem.pattern);
                                 }
                                 validator.setContext(context as any);
-                                validationResult = validator.validateSync(contextParam);
+                                validationResult = validator.validateSync(param);
                                 if (validationResult) {
                                     return httpParamValidationFailedCallback(context, httpParamItem, validationResult);
                                 }
@@ -236,7 +239,7 @@ function httpAction(name: string) {
                                 // validate min length
                                 validator = new MinLengthValidator(httpParamItem.minLength);
                                 validator.setContext(context as any);
-                                validationResult = validator.validateSync(contextParam);
+                                validationResult = validator.validateSync(param);
                                 if (validationResult) {
                                     return httpParamValidationFailedCallback(context, httpParamItem, validationResult);
                                 }
@@ -245,7 +248,7 @@ function httpAction(name: string) {
                                 // validate max length
                                 validator = new MaxLengthValidator(httpParamItem.maxLength);
                                 validator.setContext(context as any);
-                                validationResult = validator.validateSync(contextParam);
+                                validationResult = validator.validateSync(param);
                                 if (validationResult) {
                                     return httpParamValidationFailedCallback(context, httpParamItem, validationResult);
                                 }
@@ -254,7 +257,7 @@ function httpAction(name: string) {
                                 // validate min value
                                 validator = new MinValueValidator(httpParamItem.minValue);
                                 validator.setContext(context as any);
-                                validationResult = validator.validateSync(contextParam);
+                                validationResult = validator.validateSync(param);
                                 if (validationResult) {
                                     return httpParamValidationFailedCallback(context, httpParamItem, validationResult);
                                 }
@@ -263,7 +266,7 @@ function httpAction(name: string) {
                                 // validate max value
                                 validator = new MaxValueValidator(httpParamItem.required);
                                 validator.setContext(context as any);
-                                validationResult = validator.validateSync(contextParam);
+                                validationResult = validator.validateSync(param);
                                 if (validationResult) {
                                     return httpParamValidationFailedCallback(context, httpParamItem, validationResult);
                                 }
@@ -273,7 +276,7 @@ function httpAction(name: string) {
                                 // validate required value
                                 validator = new RequiredValidator();
                                 validator.setContext(context as any);
-                                validationResult = validator.validateSync(contextParam);
+                                validationResult = validator.validateSync(param);
                                 if (validationResult) {
                                     return httpParamValidationFailedCallback(context, httpParamItem, validationResult);
                                 }

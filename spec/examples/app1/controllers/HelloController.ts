@@ -41,7 +41,8 @@ export class HelloController extends HttpController {
             {
                 name: 'replyMessage',
                 type: ClientMessage,
-                fromBody: true
+                fromBody: true,
+                required: true
             }
         ]
     })

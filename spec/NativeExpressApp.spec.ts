@@ -43,6 +43,14 @@ describe('Express', () => {
         });
     });
 
+    it('should post empty body', async () => {
+        const response = await request(app)
+            .post('/home/replyWithMessage')
+            .set('Content-Type', 'application/json')
+            .send()
+        expect(response.ok).toBeFalsy();
+    });
+
     // it('should post reply message as xml', async () => {
     //     const response = await request(app)
     //         .post('/home/reply')

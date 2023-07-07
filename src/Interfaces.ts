@@ -1,7 +1,7 @@
 // MOST Web Framework Codename ZeroGravity, copyright 2017-2020 THEMOST LP all rights reserved
 import { ConfigurationBase, ApplicationBase, DataModelProperties, DataContextBase } from '@themost/common';
 import { ContextUser, DataModel } from '@themost/data';
-import { IncomingMessage, ServerResponse } from 'http';
+import { Request, Response } from 'express'
 
 
 // tslint:disable-next-line:ban-types
@@ -24,8 +24,8 @@ export declare interface HttpApplicationBase extends ApplicationBase {
 
 export declare interface HttpContextBase extends DataContextBase {
 
-    readonly request: IncomingMessage;
-    readonly response: ServerResponse;
+    readonly request: Request;
+    readonly response: Response;
     readonly application: HttpApplicationBase;
     
 }
