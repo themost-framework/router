@@ -51,16 +51,12 @@ describe('Express', () => {
         expect(response.ok).toBeFalsy();
     });
 
-    // it('should post reply message as xml', async () => {
-    //     const response = await request(app)
-    //         .post('/home/reply')
-    //         .set('Content-Type', 'application/xml')
-    //         .send(`<Action>
-    //         <message>Hi User!</message>
-    //         </Action>`)
-    //     expect(response.ok).toBeTruthy();
-    //     expect(response.body).toEqual({
-    //         reply: 'Hi User!'
-    //     });
-    // });
+    it('should get inherited action', async () => {
+        const response = await request(app)
+            .get('/home/version')
+            .set('Content-Type', 'application/json')
+            .send()
+        expect(response.ok).toBeTruthy();
+        expect(response.body.version).toEqual('latest');
+    });
 });

@@ -76,6 +76,39 @@ function contextHandler(app: ApplicationBase): Handler {
     }
 }
 
+function getControllerMethod(ctor: any, action: string): { 
+    method: (...arg: any) => any, 
+    methodAnnotation: HttpControllerMethodAnnotation
+} | undefined {
+
+    const controllerAnnotation = ctor as unknown as HttpControllerAnnotation;
+    let methodAnnotation: HttpControllerMethodAnnotation;
+    const methods = controllerAnnotation.httpMethods;
+    let method: (...arg: any) => any
+    if (methods) {
+        for (let [key, value] of methods) {
+            if (value.httpAction === action) {
+                method = ctor.prototype[key];
+                methodAnnotation = value;
+                break;
+            }
+        }
+    }
+    if (methodAnnotation == null) {
+        const superCtor = Object.getPrototypeOf(ctor);
+        if (superCtor) {
+            return getControllerMethod(superCtor, action);
+        }
+    }
+    if (method == null) {
+        return;
+    }
+    return {
+        method,
+        methodAnnotation
+    }
+}
+
 function controllerRouter(app?: ApplicationBase): Router {
     const router = Router();
     let application = app;
@@ -97,19 +130,26 @@ function controllerRouter(app?: ApplicationBase): Router {
             const controller = new ControllerCtor();
             controller.context = req.context;
             const action = route.params.action || route.routeConfig.action;
+            
             const controllerAnnotation = ControllerCtor as unknown as HttpControllerAnnotation;
             let methodAnnotation: HttpControllerMethodAnnotation;
-            const methods = controllerAnnotation.httpMethods;
-            let controllerMethod: (...arg: any) => any
-            if (methods) {
-                for (let [key, value] of methods) {
-                    if (value.httpAction === action) {
-                        controllerMethod = controller[key];
-                        methodAnnotation = value;
-                        break;
-                    }
-                }
+            let controllerMethod: (...arg: any) => any;
+            const findControllerMethod = getControllerMethod(ControllerCtor, action);
+            if (findControllerMethod) {
+                controllerMethod = findControllerMethod.method.bind(controller);
+                methodAnnotation = findControllerMethod.methodAnnotation
             }
+            // const methods = controllerAnnotation.httpMethods;
+            
+            // if (methods) {
+            //     for (let [key, value] of methods) {
+            //         if (value.httpAction === action) {
+            //             controllerMethod = controller[key];
+            //             methodAnnotation = value;
+            //             break;
+            //         }
+            //     }
+            // }
             if (typeof controllerMethod === 'function') {
                 // get full method name e.g. httpGet, httpPost, httpPut etc
                 const method = `http${capitalize(req.method)}`;
@@ -135,7 +175,12 @@ function controllerRouter(app?: ApplicationBase): Router {
                         // stage #1 get parameter from Request.body
                         if (httpParam && httpParam.fromBody) {
                             // set param from request body
-                            args.push(req.body);
+                            if (Object.keys(req.body).length === 0) {
+                                args.push(null);
+                            } else {
+                                args.push(req.body);
+                            }
+                            
                             // exit
                             return;
                         }

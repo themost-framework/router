@@ -1,11 +1,12 @@
 import { HttpController, httpController, httpGet, httpPost } from '@themost/router';
+import { BaseController } from './BaseController';
 
 class ClientMessage {
     message: string
 }
 
 @httpController('hello')
-export class HelloController extends HttpController {
+export class HelloController extends BaseController {
     constructor() {
         super();
     }
