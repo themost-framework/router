@@ -77,18 +77,17 @@ function contextHandler(app: ApplicationBase): Handler {
 }
 
 function getControllerMethod(ctor: any, action: string): { 
-    method: (...arg: any) => any, 
-    methodAnnotation: HttpControllerMethodAnnotation
+    [k: string]: HttpControllerMethodAnnotation
 } | undefined {
 
     const controllerAnnotation = ctor as unknown as HttpControllerAnnotation;
     let methodAnnotation: HttpControllerMethodAnnotation;
     const methods = controllerAnnotation.httpMethods;
-    let method: (...arg: any) => any
+    let method: string;
     if (methods) {
         for (let [key, value] of methods) {
             if (value.httpAction === action) {
-                method = ctor.prototype[key];
+                method = key;
                 methodAnnotation = value;
                 break;
             }
@@ -103,10 +102,9 @@ function getControllerMethod(ctor: any, action: string): {
     if (method == null) {
         return;
     }
-    return {
-        method,
-        methodAnnotation
-    }
+    const result: { [k:string] : HttpControllerMethodAnnotation } = {};
+    result[method] = methodAnnotation;
+    return result;
 }
 
 function controllerRouter(app?: ApplicationBase): Router {
@@ -136,20 +134,10 @@ function controllerRouter(app?: ApplicationBase): Router {
             let controllerMethod: (...arg: any) => any;
             const findControllerMethod = getControllerMethod(ControllerCtor, action);
             if (findControllerMethod) {
-                controllerMethod = findControllerMethod.method.bind(controller);
-                methodAnnotation = findControllerMethod.methodAnnotation
+                const keys = Object.keys(findControllerMethod);
+                controllerMethod = controller[keys[0]];
+                methodAnnotation = findControllerMethod[keys[0]];
             }
-            // const methods = controllerAnnotation.httpMethods;
-            
-            // if (methods) {
-            //     for (let [key, value] of methods) {
-            //         if (value.httpAction === action) {
-            //             controllerMethod = controller[key];
-            //             methodAnnotation = value;
-            //             break;
-            //         }
-            //     }
-            // }
             if (typeof controllerMethod === 'function') {
                 // get full method name e.g. httpGet, httpPost, httpPut etc
                 const method = `http${capitalize(req.method)}`;

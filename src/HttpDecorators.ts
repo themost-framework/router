@@ -12,7 +12,7 @@ class DecoratorError extends Error {
 }
 
 
-function httpController(name: string): ClassDecorator {
+function httpController(name?: string): ClassDecorator {
     return (target: any) => {
         Args.check(typeof target === 'function', new DecoratorError());
         // define controller name
