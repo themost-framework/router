@@ -27,18 +27,13 @@ classes and methods.
 
 `IndexController` is marked by `@httpController` class decorator and `IndexController.index()` by `@httpGet` method decorator.
 
-## @httpController
-
-Annotates a class which is going to be used as controller.
-
-
-Create an instance of `HttpApplication`, add `routes` collection and register `controllerRouter` middleware:
+Create an instance of `HttpApplication` class and register `controllerRouter` express.js middleware:
 
     const app = express();
     app.use(express.json());
     ...
     const httpApp = new HttpApplication();
-    const routes: HttpRouteConfig[] = [
+    const routes = [
         {
             path: '',
             action: 'index',
@@ -49,4 +44,68 @@ Create an instance of `HttpApplication`, add `routes` collection and register `c
     httpApp.getService(RouterService).addRange(...routes);
     app.use(controllerRouter(httpApp));
 
- 
+## @httpController
+
+Annotates a class which is going to be used as controller
+
+## @httpGet(name,params)
+
+A method decorator which defines an HTTP GET method
+
+### name
+
+> string
+
+A string which represents the name of the method while executing HTTP requests. This name is being used by routing service while parsing routes which contain `:action` param:
+
+    {
+        path: 'home',
+        controller: HelloController,
+        children: [
+            {
+                path: '',
+                redirectTo: 'index'
+            },
+            {
+                path: ':action'
+            }
+        ]
+    }
+
+### params
+
+> HttpParamAttributeOptions[]
+
+An array of objects which represent a collection of route or querystring params
+
+    @httpGet({
+        params: [
+            {
+                name: 'id',
+                type: 'Integer',
+                required: true
+            }
+        ]
+    })
+    getItem(id) {
+        //
+    }
+
+
+ ## @httpPost(name,params)
+
+A method decorator which defines an HTTP POST method
+
+    @httpPost({
+        name: 'reply',
+        params: [
+            {
+                name: 'message',
+                type: 'Text',
+                maxLength: 512
+            }
+        ]
+    })
+    reply(message) {
+        //
+    }
