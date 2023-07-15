@@ -44,7 +44,7 @@ Create an instance of `HttpApplication` class and register `controllerRouter` ex
     httpApp.getService(RouterService).addRange(...routes);
     app.use(controllerRouter(httpApp));
 
-## @httpController
+## @httpController()
 
 Annotates a class which is going to be used as controller
 
@@ -157,3 +157,40 @@ An array of objects which represents a collection of route or querystring params
     remove(id) {
         // remove item by id
     }
+
+## @httpPatch(name,params)
+
+A method decorator which defines an HTTP PATCH method
+
+## @httpHead(name,params)
+
+A method decorator which defines an HTTP HEAD method
+
+## @httpOptions(name,params)
+
+A method decorator which defines an HTTP OPTIONS method
+
+## @httpActionConsumer(HttpConsumer | ConsumerFunction)
+
+A method decorator which defines an operation which is going to be executed before processing controller action.
+
+    // GET /api/home/messages
+
+    @httpGet({
+        name: 'messages'
+    })
+    @httpActionConsumer(async (context) => {
+        const username = (context.user && context.user.name) || 'anonymous';
+        if (username === 'anonymous') {
+            throw new AccessDeniedError();
+        }
+    })
+    getMessages() {
+        return this.json([
+            {
+                message: 'Hello World'
+            }
+        ]);
+    }    
+
+e.g. a consumer which validates if `context.user` is empty and throws access denied error.

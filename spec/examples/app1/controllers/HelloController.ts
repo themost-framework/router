@@ -1,5 +1,6 @@
-import { HttpController, httpController, httpGet, httpPost } from '@themost/router';
+import { HttpController, httpActionConsumer, httpController, httpGet, httpPost } from '@themost/router';
 import { BaseController } from './BaseController';
+import { AccessDeniedError } from '@themost/common';
 
 class ClientMessage {
     message: string
@@ -51,5 +52,22 @@ export class HelloController extends BaseController {
         return this.json({
             reply: replyMessage.message
         });
+    }
+
+    @httpGet({
+        name: 'messages'
+    })
+    @httpActionConsumer(async (context) => {
+        const username = (context.user && context.user.name) || 'anonymous';
+        if (username === 'anonymous') {
+            throw new AccessDeniedError();
+        }
+    })
+    getMessages() {
+        return this.json([
+            {
+                message: 'Hello World'
+            }
+        ]);
     }
 }

@@ -216,7 +216,9 @@ function controllerRouter(app?: ApplicationBase): Router {
                     // execute action consumers
                     const consumers = methodAnnotation.httpConsumers || [];
                     const consumerSequence = consumers.map((consumer) => {
-                        return () => consumer.run(controller.context)
+                        return () => {
+                            return consumer.run(controller.context)
+                        }
                     });
                     return Promise.sequence(consumerSequence).then(() => {
                         const result = controllerMethod.apply(controller, args);
