@@ -52,9 +52,7 @@ Annotates a class which is going to be used as controller
 
 A method decorator which defines an HTTP GET method
 
-### name
-
-> string
+> name: string
 
 A string which represents the name of the method while executing HTTP requests. This name is being used by routing service while parsing routes which contain `:action` param:
 
@@ -72,11 +70,9 @@ A string which represents the name of the method while executing HTTP requests. 
         ]
     }
 
-### params
+> params : HttpParamAttributeOptions[]
 
-> HttpParamAttributeOptions[]
-
-An array of objects which represent a collection of route or querystring params
+An array of objects which represents a collection of route or querystring params
 
     @httpGet({
         params: [
@@ -90,7 +86,6 @@ An array of objects which represent a collection of route or querystring params
     getItem(id) {
         //
     }
-
 
  ## @httpPost(name,params)
 
@@ -108,4 +103,57 @@ A method decorator which defines an HTTP POST method
     })
     reply(message) {
         //
+    }
+
+## @httpPut(name,params)
+
+A method decorator which defines an HTTP PUT method
+
+> name: string
+
+A string which represents the name of the method while executing HTTP requests. This name is being used by routing service while parsing routes which contain `:action` param:
+
+> params : HttpParamAttributeOptions[]
+
+    // e.g. PUT /api/items
+
+    @httpPut({
+        params: [
+            {
+                name: 'item',
+                fromBody: true,
+                required: true
+            }
+        ]
+    })
+    update(item) {
+        //
+    }
+
+An array of objects which represents a collection of route or querystring params
+
+## @httpDelete(name,params)
+
+A method decorator which defines an HTTP DELETE method
+
+> name: string
+
+A string which represents the name of the method while executing HTTP requests. This name is being used by routing service while parsing routes which contain `:action` param:
+
+> params : HttpParamAttributeOptions[]
+
+An array of objects which represents a collection of route or querystring params
+
+    // e.g. DELETE /api/items/:id
+
+    @httpDelete({
+        params: [
+            {
+                name: 'id',
+                required: true
+            }
+        ]
+    })
+    remove(id) {
+        // remove item by id
     }
