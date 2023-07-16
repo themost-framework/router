@@ -172,7 +172,7 @@ A method decorator which defines an HTTP OPTIONS method
 
 ## @httpActionConsumer(HttpConsumer | ConsumerFunction)
 
-A method decorator which defines an operation which is going to be executed before processing controller action.
+A method decorator which defines an operation that is going to be executed before processing controller action.
 
     // GET /api/home/messages
 

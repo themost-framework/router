@@ -68,4 +68,12 @@ describe('Express', () => {
         expect(response.ok).toBeTruthy();
         expect(response.body.version).toEqual('latest');
     });
+
+    it('should get users', async () => {
+        const response = await request(app)
+            .get('/users/')
+            .set('Accept', 'application/json')
+            .send()
+        expect(response.ok).toBeTruthy();
+    });
 });

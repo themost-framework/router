@@ -2,6 +2,7 @@
 import { ApplicationService, ApplicationBase } from '@themost/common';
 import {HttpRoute, HttpRouteConfig} from './HttpRoute';
 import { resolve, join } from 'path';
+import { ResponseFormatService } from './ResponseFormatService';
 
 class RouterService extends ApplicationService {
     public readonly routes: HttpRouteConfig[] = [];
@@ -43,12 +44,13 @@ class RouterService extends ApplicationService {
                     path: join(current.path, child.path),
                     parent: current
                 });
-                let isMatch = route.isMatch(url);
+                const urlToMatch = url.replace(/\/$/, ''); // remove trailing slash before match
+                let isMatch = route.isMatch(urlToMatch);
                 if (isMatch) {
                     return route;
                 }
                 if (Array.isArray(child.children)) {
-                    const found = this._tryParseChildren(child, url);
+                    const found = this._tryParseChildren(child, urlToMatch);
                     if (found) {
                         return found;
                     }
