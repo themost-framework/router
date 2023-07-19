@@ -9,7 +9,15 @@
     "test": "nyc jasmine",
     "build": "rimraf dist && rollup -c rollup.config.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/themost-framework/router.git"
+  },
   "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/themost-framework/router/issues"
+  },
+  "homepage": "https://github.com/themost-framework/router#readme",
   "peerDependencies": {
     "@themost/common": "^2",
     "@themost/data": "^2",
