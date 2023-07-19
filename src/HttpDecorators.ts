@@ -1,6 +1,6 @@
 // MOST Web Framework Codename ZeroGravity, copyright 2017-2020 THEMOST LP all rights reserved
 import {TraceUtils, LangUtils, HttpBadRequestError, HttpUnauthorizedError, Args, Types} from '@themost/common';
-import {HttpConsumer} from './HttpConsumer';
+import {ConsumerFunction, HttpConsumer} from './HttpConsumer';
 import {DataTypeValidator, MinLengthValidator, MaxLengthValidator,
 MinValueValidator, MaxValueValidator, RequiredValidator, PatternValidator, DataContext} from '@themost/data';
 import {HttpRouteConfig} from './HttpRoute';
@@ -345,12 +345,12 @@ function httpAuthorize(value?: boolean) {
     };
 }
 
-function httpActionConsumer(consumer: HttpConsumer | any) {
+function httpActionConsumer(consumer: HttpConsumer | ConsumerFunction) {
     return (target: any, key: any, descriptor: any) => {
         if (typeof descriptor.value !== 'function') {
             throw new Error('Decorator is not valid on this declaration type.');
         }
-        const controllerAnnotation = target as HttpControllerAnnotation;
+        const controllerAnnotation = target.constructor as HttpControllerAnnotation;
         if (controllerAnnotation.httpMethods == null) {
             controllerAnnotation.httpMethods = new Map();
         }

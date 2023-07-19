@@ -4,13 +4,14 @@ import { HttpResult } from './HttpResult';
 import { HttpNextResult } from './HttpNextResult';
 import { HttpControllerMethodAnnotation, HttpParamAttributeOptions, HttpControllerAnnotation } from './HttpDecorators';
 import {capitalize} from 'lodash';
-import { ApplicationBase, LangUtils } from '@themost/common';
+import { ApplicationBase, HttpError, HttpNotAcceptableError, LangUtils } from '@themost/common';
 import { RouterService } from './RouterService';
 import { HttpRoute } from './HttpRoute'; 
 import { HttpContextBase } from './Interfaces';
 import { HttpContext } from './HttpContext';
 import { HttpApplication } from './HttpApplication';
 import '@themost/promise-sequence';
+import { ResponseFormatService } from './ResponseFormatService';
 
 declare global {
     namespace Express {
@@ -24,6 +25,10 @@ declare global {
             }
         }
     }
+}
+
+function isPromise(value: any) {
+    return (typeof value.then === 'function') && (typeof value.catch === 'function');
 }
 
 function contextHandler(app: ApplicationBase): Handler {
@@ -216,7 +221,9 @@ function controllerRouter(app?: ApplicationBase): Router {
                     // execute action consumers
                     const consumers = methodAnnotation.httpConsumers || [];
                     const consumerSequence = consumers.map((consumer) => {
-                        return () => consumer.run(controller.context)
+                        return () => {
+                            return consumer.run(controller.context)
+                        }
                     });
                     return Promise.sequence(consumerSequence).then(() => {
                         const result = controllerMethod.apply(controller, args);
@@ -231,7 +238,23 @@ function controllerRouter(app?: ApplicationBase): Router {
                             }).catch((err) => {
                                 return next(err);
                             });
+                        } else if (isPromise(result)) {
+                            // format result
+                            return result.then((data: any) => {
+                                 const formatService = controller.context.application.getService(ResponseFormatService);
+                                 if (formatService == null) {
+                                    throw new Error('ResponseFormatService cannot be null at this context');
+                                 }
+                                 return formatService.tryExecuteFormatter(controller.context, data).then(() => {
+                                    if (controller.context.response.writableEnded === false) {
+                                        controller.context.response.end();
+                                    }
+                                 });
+                            }).catch((err: Error) => {
+                                return next(err);
+                            });
                         }
+                        throw new HttpError(415)
                     }).catch((err) => {
                         return next(err);
                     });

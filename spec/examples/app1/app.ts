@@ -5,6 +5,7 @@ import { ViewEngine } from '@themost/ejs';
 import * as path from 'path';
 import { IndexController } from './controllers/IndexController';
 import { TraceUtils } from '@themost/common';
+import { UserController } from './controllers/UserController';
 
 
 const app = express();
@@ -39,7 +40,21 @@ const routes: HttpRouteConfig[] = [
                 path: ':action'
             }
         ]
-    }
+    },
+    {
+        path: 'users',
+        controller: UserController,
+        children: [
+            {
+                path: '',
+                action: 'index'
+            },
+            {
+                path: ':id',
+                action: 'item'
+            }
+        ]
+    },
 ]
 
 service.getService(RouterService).addRange(...routes)

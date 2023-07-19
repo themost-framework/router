@@ -51,6 +51,15 @@ describe('Express', () => {
         expect(response.ok).toBeFalsy();
     });
 
+    it('should get messages', async () => {
+        const response = await request(app)
+            .get('/home/messages')
+            .set('Content-Type', 'application/json')
+            .send()
+        expect(response.ok).toBeFalsy();
+        expect(response.status).toEqual(401);
+    });
+
     it('should get inherited action', async () => {
         const response = await request(app)
             .get('/home/version')
@@ -58,5 +67,14 @@ describe('Express', () => {
             .send()
         expect(response.ok).toBeTruthy();
         expect(response.body.version).toEqual('latest');
+    });
+
+    it('should get users', async () => {
+        const response = await request(app)
+            .get('/users/')
+            .set('Accept', 'application/json')
+            .send()
+        expect(response.ok).toBeTruthy();
+        expect(response.body).toBeInstanceOf(Array);
     });
 });
