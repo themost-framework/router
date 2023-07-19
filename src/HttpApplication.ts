@@ -22,7 +22,7 @@ export class HttpApplication extends SequentialEventEmitter implements HttpAppli
         this.configuration.useStrategy(DataConfigurationStrategy)
         // use router service
         this.useService(RouterService);
-        this.useService(ResponseFormatService)
+        this.useService(ResponseFormatService);
     }
 
     /**

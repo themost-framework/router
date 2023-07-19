@@ -75,5 +75,6 @@ describe('Express', () => {
             .set('Accept', 'application/json')
             .send()
         expect(response.ok).toBeTruthy();
+        expect(response.body).toBeInstanceOf(Array);
     });
 });

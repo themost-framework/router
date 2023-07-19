@@ -186,11 +186,11 @@ A method decorator which defines an operation that is going to be executed befor
         }
     })
     getMessages() {
-        return this.json([
+        return [
             {
                 message: 'Hello World'
             }
-        ]);
+        ];
     }    
 
 e.g. a consumer which validates if `context.user` is empty and throws access denied error.

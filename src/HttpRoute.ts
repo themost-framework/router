@@ -36,6 +36,7 @@ export declare interface HttpRouteConfig {
     index?: number;
     controller?: any;
     action?: string;
+    format?: string;
     redirectTo?: string;
     children?: HttpRouteConfig[]
     [k:string]: any;
