@@ -6,7 +6,9 @@ class ClientMessage {
     message: string
 }
 
-@httpController('hello')
+@httpController({
+    name: 'hello'
+})
 export class HelloController extends BaseController {
     constructor() {
         super();

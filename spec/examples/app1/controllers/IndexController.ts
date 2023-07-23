@@ -1,7 +1,9 @@
 import { HttpController, httpController, httpGet } from '@themost/router';
 import { BaseController } from './BaseController';
 
-@httpController('index')
+@httpController({
+    name: 'index'
+})
 export class IndexController extends BaseController {
 
     @httpGet()

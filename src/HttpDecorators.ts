@@ -4,6 +4,7 @@ import {ConsumerFunction, HttpConsumer} from './HttpConsumer';
 import {DataTypeValidator, MinLengthValidator, MaxLengthValidator,
 MinValueValidator, MaxValueValidator, RequiredValidator, PatternValidator, DataContext} from '@themost/data';
 import {HttpRouteConfig} from './HttpRoute';
+import { camelCase } from 'lodash';
 
 class DecoratorError extends Error {
     constructor(msg?: string) {
@@ -12,13 +13,23 @@ class DecoratorError extends Error {
 }
 
 
-function httpController(name?: string): ClassDecorator {
+function httpController(options?: { name?: string, views?: string}): ClassDecorator {
     return (target: any) => {
         Args.check(typeof target === 'function', new DecoratorError());
         // define controller name
+        let name = options && options.name;
+        let views = options && options.views;
+        if (name == null) {
+            // try to resolve name from class
+            const removeControllerWord = target.name.replace(/([_$]+)?Controller$/ig, '');
+            if (removeControllerWord.length) {
+                name =  removeControllerWord;
+            }
+        }
         Object.defineProperty(target, 'httpController', {
             value: {
-                name
+                name,
+                views
             },
             configurable: false,
             enumerable: true,
