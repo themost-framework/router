@@ -1,3 +1,4 @@
+import { ControllerViewPathResolver } from './ControllerViewPathResolver';
 import { HttpControllerAnnotation } from './HttpDecorators';
 import { HttpResult } from './HttpResult';
 import { HttpRoute } from './HttpRoute';
@@ -25,10 +26,9 @@ export class HttpViewResult extends HttpResult {
             }
             const controllerAnnotation = activatedRoute.routeConfig.controller as HttpControllerAnnotation;
             let viewPath = null;
-            if (controllerAnnotation && controllerAnnotation.httpController && controllerAnnotation.httpController.name) {
-                viewPath = controllerAnnotation.httpController.name;
-                viewPath += '/';
-                viewPath += activatedRoute.routeConfig.action || 'index';
+            const viewPathResolver = context.application.getService(ControllerViewPathResolver);
+            if (viewPathResolver) {
+                viewPath = viewPathResolver.resolve(activatedRoute.routeConfig.controller)
             }
             if (viewPath == null) {
                 return reject(new Error('View path cannot be determined'));

@@ -6,6 +6,7 @@ import { HttpControllerAnnotation } from './HttpDecorators';
 import { resolve } from 'path';
 import { DataConfigurationStrategy } from '@themost/data';
 import { ResponseFormatService } from './ResponseFormatService';
+import { ControllerViewPathResolver, DefaultControllerViewPathResolver } from './ControllerViewPathResolver';
 
 export class HttpApplication extends SequentialEventEmitter implements HttpApplicationBase {
     private readonly _configuration: ConfigurationBase;
@@ -23,6 +24,7 @@ export class HttpApplication extends SequentialEventEmitter implements HttpAppli
         // use router service
         this.useService(RouterService);
         this.useService(ResponseFormatService);
+        this.useStrategy(ControllerViewPathResolver, DefaultControllerViewPathResolver);
     }
 
     /**

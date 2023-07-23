@@ -19,13 +19,6 @@ function httpController(options?: { name?: string, views?: string}): ClassDecora
         // define controller name
         let name = options && options.name;
         let views = options && options.views;
-        if (name == null) {
-            // try to resolve name from class
-            const removeControllerWord = target.name.replace(/([_$]+)?Controller$/ig, '');
-            if (removeControllerWord.length) {
-                name =  removeControllerWord;
-            }
-        }
         Object.defineProperty(target, 'httpController', {
             value: {
                 name,
@@ -73,7 +66,7 @@ declare interface HttpControllerMethodAnnotation extends HttpControllerMethodDec
 }
 
 declare interface HttpControllerAnnotation extends Function {
-    httpController: { name: string };
+    httpController: { name?: string, views?: string };
     httpMethods: Map<string, HttpControllerMethodAnnotation>
 }
 
