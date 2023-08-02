@@ -1,4 +1,4 @@
-import { ControllerViewPathResolver } from './ControllerViewPathResolver';
+import { ViewPathResolver } from './ViewPathResolver';
 import { HttpControllerAnnotation } from './HttpDecorators';
 import { HttpResult } from './HttpResult';
 import { HttpRoute } from './HttpRoute';
@@ -24,16 +24,21 @@ export class HttpViewResult extends HttpResult {
             if (activatedRoute == null) {
                 return reject(new Error('Request activated route cannot be empty at this context'));
             }
-            const controllerAnnotation = activatedRoute.routeConfig.controller as HttpControllerAnnotation;
             let viewPath = null;
-            const viewPathResolver = context.application.getService(ControllerViewPathResolver);
+            const viewPathResolver = context.application.getService(ViewPathResolver);
             if (viewPathResolver) {
                 viewPath = viewPathResolver.resolve(activatedRoute.routeConfig.controller)
             }
             if (viewPath == null) {
                 return reject(new Error('View path cannot be determined'));
             }
-            void res.render(viewPath, this.data, (err, html) => {
+            if (activatedRoute.params.action) {
+                viewPath += '/';
+                viewPath += activatedRoute.params.action;
+            }
+            void res.render(viewPath, {
+                model: this.data
+            }, (err, html) => {
                 if (err) {
                     return reject(err);
                 }

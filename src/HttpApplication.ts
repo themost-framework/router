@@ -6,12 +6,12 @@ import { HttpControllerAnnotation } from './HttpDecorators';
 import { resolve } from 'path';
 import { DataConfigurationStrategy } from '@themost/data';
 import { ResponseFormatService } from './ResponseFormatService';
-import { ControllerViewPathResolver, DefaultControllerViewPathResolver } from './ControllerViewPathResolver';
+import { ViewPathResolver, DefaultViewPathResolver } from './ViewPathResolver';
 
 export class HttpApplication extends SequentialEventEmitter implements HttpApplicationBase {
-    private readonly _configuration: ConfigurationBase;
-    private services: Map<string, any> = new Map();
-    private controllers: Map<string, any> = new Map();
+    protected readonly _configuration: ConfigurationBase;
+    protected services: Map<string, any> = new Map();
+    protected controllers: Map<string, any> = new Map();
     public container: any;
 
     constructor(cwd?: string) {
@@ -19,12 +19,12 @@ export class HttpApplication extends SequentialEventEmitter implements HttpAppli
         // set configuration
         let _cwd = cwd || process.cwd();
         this._configuration = new ConfigurationBase(resolve(_cwd, 'config'));
-        // use data configuration strategy (for implenting validators)
+        // use data configuration strategy (for implementing validators)
         this.configuration.useStrategy(DataConfigurationStrategy)
         // use router service
         this.useService(RouterService);
         this.useService(ResponseFormatService);
-        this.useStrategy(ControllerViewPathResolver, DefaultControllerViewPathResolver);
+        this.useStrategy(ViewPathResolver, DefaultViewPathResolver);
     }
 
     /**

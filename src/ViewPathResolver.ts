@@ -2,7 +2,7 @@ import { ApplicationBase, ApplicationService } from '@themost/common';
 import { HttpControllerAnnotation } from './HttpDecorators';
 import { kebabCase, camelCase } from 'lodash';
 
-abstract class ControllerViewPathResolver extends ApplicationService {
+abstract class ViewPathResolver extends ApplicationService {
 
     constructor(app: ApplicationBase) {
         super(app);
@@ -11,7 +11,7 @@ abstract class ControllerViewPathResolver extends ApplicationService {
     abstract resolve(controllerCtor: new (...args:any[]) => any): string | undefined;
 }
 
-class DefaultControllerViewPathResolver extends ControllerViewPathResolver {
+class DefaultViewPathResolver extends ViewPathResolver {
 
 
     resolve(controllerCtor: new (...args:any[]) => any): string | undefined {
@@ -35,7 +35,7 @@ class DefaultControllerViewPathResolver extends ControllerViewPathResolver {
 
 }
 
-class CamelCaseControllerViewPathResolver extends ControllerViewPathResolver {
+class CamelCaseViewPathResolver extends ViewPathResolver {
 
     resolve(controllerCtor: new (...args:any[]) => any): string | undefined {
         const controllerAnnotation = controllerCtor as unknown as HttpControllerAnnotation;
@@ -59,7 +59,7 @@ class CamelCaseControllerViewPathResolver extends ControllerViewPathResolver {
 }
 
 export {
-    ControllerViewPathResolver,
-    DefaultControllerViewPathResolver,
-    CamelCaseControllerViewPathResolver
+    ViewPathResolver,
+    DefaultViewPathResolver,
+    CamelCaseViewPathResolver
 }

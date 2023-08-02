@@ -3,7 +3,7 @@ import { HttpResult } from './HttpResult';
 import { HttpJsonResult } from './HttpJsonResult';
 import { HttpViewResult } from './HttpViewResult';
 import { HttpContextBase } from './Interfaces';
-import * as accepts from 'accepts';
+const accepts = require('accepts');
 
 class ResponseFormatService extends ApplicationService {
     public formatters = new Map<string, new(...args: any) => HttpResult>();
