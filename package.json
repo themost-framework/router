@@ -1,6 +1,6 @@
 {
   "name": "@themost/router",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Router services for express.js applications",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
