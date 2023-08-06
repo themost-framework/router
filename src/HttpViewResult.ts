@@ -1,10 +1,20 @@
 import { ViewPathResolver } from './ViewPathResolver';
-import { HttpControllerAnnotation } from './HttpDecorators';
 import { HttpResult } from './HttpResult';
 import { HttpRoute } from './HttpRoute';
 import { HttpContextBase } from './Interfaces';
 import { Request, Response } from 'express-serve-static-core';
+import { enumerable } from './decorators';
 
+export class HttpViewContext {
+    constructor(private _context: HttpContextBase) {
+        //
+    }
+
+    @enumerable(false)
+    get context(): HttpContextBase {
+        return this._context;
+    }
+}
 
 export class HttpViewResult extends HttpResult {
 
@@ -37,6 +47,7 @@ export class HttpViewResult extends HttpResult {
                 viewPath += activatedRoute.params.action;
             }
             void res.render(viewPath, {
+                html: new HttpViewContext(context),
                 model: this.data
             }, (err, html) => {
                 if (err) {
